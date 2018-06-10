@@ -39,7 +39,6 @@ import org.apache.nutch.protocol.Content;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlMapper;
@@ -47,11 +46,17 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.Link;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
 import org.xml.sax.ContentHandler;
+
+import static org.ccil.cowan.tagsoup.HTMLModels.M_BLOCK;
+import static org.ccil.cowan.tagsoup.HTMLModels.M_INLINE;
+import static org.ccil.cowan.tagsoup.Schema.M_PCDATA;
 
 /**
  * Wrapper for Tika parsers. Mimics the HTMLParser but using the XHTML
@@ -133,6 +138,10 @@ public class TikaParser implements org.apache.nutch.parse.Parser {
     if (HTMLMapper != null)
       context.set(HtmlMapper.class, HTMLMapper);
     tikamd.set(Metadata.CONTENT_TYPE, mimeType);
+    HTMLSchema schema = new HTMLSchema();
+    schema.elementType("footer", M_PCDATA|M_INLINE|M_BLOCK, M_BLOCK, 0);
+    schema.parent("footer", "body");
+    context.set(Schema.class, schema);
     try {
       parser.parse(new ByteArrayInputStream(raw), (ContentHandler)teeContentHandler, tikamd, context);
     } catch (Exception e) {
